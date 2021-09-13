@@ -1,3 +1,11 @@
+# 2.2.1
+
+* new functions for joining stages with "ordered" variables:
+  `stages_ordered_bhc` and `exhaustive_ordered_bhc`
+* `stages_bhc_plot` new function for plotting the staged tree after every merge 
+  when using the bhc algorithm
+
+
 # 2.2.0
 
 * `plot.ceg` new plotting functions using `igraph` plotting.

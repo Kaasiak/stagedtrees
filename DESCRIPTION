@@ -1,7 +1,7 @@
 Package: stagedtrees
 Type: Package
 Title: Staged Event Trees 
-Version: 2.2.0
+Version: 2.2.1
 Authors@R: c(
   person(given = "Gherardo", family = "Varando", role = c("aut", "cre"),
   email = "gherardo.varando@gmail.com", 
@@ -9,7 +9,8 @@ Authors@R: c(
 	person(given = "Federico", family = "Carli", role = "aut"),
 	person(given = "Manuele", family = "Leonelli", role = "aut", 
 	comment = c(ORCID = "0000-0002-2562-5192")),
-	person(given = "Eva", family = "Riccomagno", role = "aut")
+	person(given = "Eva", family = "Riccomagno", role = "aut"),
+	person(given = "Kasia", family = "Kobalczyk", role = "aut")
 	)
 Description: Creates and fits staged event tree probability models, 
              which are probabilistic graphical models capable of representing 
@@ -33,10 +34,10 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)
-URL: https://github.com/gherardovarando/stagedtrees
-BugReports: https://github.com/gherardovarando/stagedtrees/issues
-Imports: stats,
-         graphics
+Imports: 
+    stats,
+    graphics,
+    gtools
 Suggests: 
     testthat,
     bnlearn,

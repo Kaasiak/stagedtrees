@@ -823,3 +823,4 @@ stages_kmeans <- function(object,
   object$call <- sys.call()
   return(sevt_fit(object, lambda = object$lambda))
 }
+

@@ -9,6 +9,8 @@
 #' data, as returned by \code{full} or \code{sevt_fit}.
 #' @param variable name of a variables that should be considered for the optimization.
 #' @param n_init initial number of stages per subset considered for the optimization.
+#' @param per_subset if TRUE performs the merging of the stages in each subtree separately,
+#' if FALSE in first step merges all stages associated with the same outcome into the same stage.
 #' @param score the score function to be maximized.
 #' @param max_iter the maximum number of iterations per variable.
 #' @param ignore vector of stages which will be ignored and left untouched,
@@ -26,6 +28,7 @@ stages_ordered_bhc <-
   function(object,
            variable = NULL,
            n_init = NULL,
+           per_subset = FALSE,
            score = function(x) {
              return(-BIC(x))
            },
@@ -41,6 +44,15 @@ stages_ordered_bhc <-
       stop("The variable to be optimised must be specified")
     }
     v <- variable
+    
+    # initial merge of stages associated with the same outcomes
+    if (!per_subset) {
+      for (i in seq(1, n_init)) {
+        join_stages <- seq(i, length(object$stages[[v]]), n_init)
+        object <- join_multiple_stages(object, v, join_stages)
+      }
+    }
+    
     stages <- unique(object$stages[[v]])
     stages <- stages[!(stages %in% ignore)]
     subset_stages_index <- seq(1,length(stages), n_init)  #starting indices for subsets of stages
@@ -221,14 +233,13 @@ exhaustive_ordered_search <- function(
   stages <- stages[!(stages %in% ignore)]
   n_init <- length(stages)
   partitions <- as.matrix(gtools::combinations(n = n_init - 1, r = n_bins - 1, repeats.allowed = FALSE))
-
   maxScore <- -Inf
   best_part <- NULL
   best_object <- NULL
   for (i in seq(1, nrow(partitions))) {
     part <- partitions[i,]
     part <- c(0, part, n_init)
-    try_object <- join_multiple_stages(object, v, part)
+    try_object <- partition_stages(object, v, part)
     try_score <- score(try_object)
     if (try_score > maxScore) {
         maxScore <- try_score
@@ -248,12 +259,13 @@ exhaustive_ordered_search <- function(
 #' @param object an object of class \code{sevt}.
 #' @param v variable.
 #' @param part vector of partitioning the stages into n bins.
-#' @return the staged event tree where \code{s1} and \code{s2} are joined.
+#' @return the staged event tree where the stages are joined according to 
+#' the partition vector
 #' @details This function joins all in one partition defined by the `part` vector,
 #'          updating probabilities and log-likelihood if 
 #'          the object was fitted.
 #' @export
-join_multiple_stages <- function(object, v, part) {
+partition_stages <- function(object, v, part) {
   check_sevt(object)
   k <- length(object$tree[[v]])
   # Extract probabilities and counts
@@ -266,7 +278,7 @@ join_multiple_stages <- function(object, v, part) {
     object$lambda <- 0
   }
   n_old_stages <- length(object$stages[[v]])
-  # Get new sample sizes
+  # Get sample sizes
   ct <- probs * (n + object$lambda * k) - object$lambda
   
   # Get old part of ll
@@ -309,3 +321,60 @@ join_multiple_stages <- function(object, v, part) {
   return(object)
 }
 
+
+#' Join multiple stages
+#'
+#' Join multiple stages in a staged event tree object, updating
+#' probabilities and log-likelihood accordingly.
+#'
+#' @param object an object of class \code{sevt}.
+#' @param v variable.
+#' @param join_stages vector of stages to be merged.
+#' @return the staged event tree where all stages in `join_stages` are joined
+#' @details This function joins all in one partition defined by the `part` vector,
+#'          updating probabilities and log-likelihood if 
+#'          the object was fitted.
+#' @export
+join_multiple_stages <- function(object, v, join_stages) {
+  check_sevt(object)
+  join_stages <- as.character(join_stages)
+  s1 <- join_stages[1]
+  s2 <- join_stages[2:length(join_stages)]
+  k <- length(object$tree[[v]])
+  st <- object$stages[[v]]
+
+  if (!is.null(object$prob)) {
+    probs <- as.matrix(expand_prob(object)[[v]])
+    counts <- as.matrix(object$ctables[[v]])
+    rownames(counts) <- object$stages[[v]]
+    rownames(probs) <- object$stages[[v]]
+    if (is.null(object$lambda)) {
+      object$lambda <- 0
+    }
+    old_prob <- probs[join_stages,]
+    old_ct <- counts[join_stages,]
+    if (is.null(object$lambda)) {
+      object$lambda <- 0
+    }
+    dll <- sum(old_ct[old_ct > 0] * log(old_prob[old_ct > 0]))
+    
+    object$prob[[v]][[s1]] <- colSums(old_ct) + object$lambda
+    attr(object$prob[[v]][[s1]], "n") <- sum(old_ct)
+    object$prob[[v]][[s1]] <-
+      object$prob[[v]][[s1]] / sum(object$prob[[v]][[s1]])
+    for (s in s2) {
+      object$prob[[v]][[s]] <- NULL ## delete remaining stages
+    }
+    object$stages[[v]][st %in% s2] <- s1
+    if (!is.null(object$ll)) {
+      ## update log likelihood
+      new_ct <- colSums(old_ct)
+      object$ll <-
+        object$ll - dll + sum(new_ct[new_ct > 0] *
+                                log(object$prob[[v]][[s1]][new_ct > 0]))
+      attr(object$ll, "df") <-
+        attr(object$ll, "df") - (k - 1) * (length(join_stages) - 1)
+    }
+  }
+  return(object)
+}

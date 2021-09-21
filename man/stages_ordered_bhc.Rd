@@ -9,6 +9,7 @@ stages_ordered_bhc(
   object,
   variable = NULL,
   n_init = NULL,
+  per_subset = FALSE,
   score = function(x) {     return(-BIC(x)) },
   max_iter = Inf,
   ignore = object$name_unobserved,
@@ -22,6 +23,9 @@ data, as returned by \code{full} or \code{sevt_fit}.}
 \item{variable}{name of a variables that should be considered for the optimization.}
 
 \item{n_init}{initial number of stages per subset considered for the optimization.}
+
+\item{per_subset}{if TRUE performs the merging of the stages in each subtree separately,
+if FALSE in first step merges all stages associated with the same outcome into the same stage.}
 
 \item{score}{the score function to be maximized.}
 

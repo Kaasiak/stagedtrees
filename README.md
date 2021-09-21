@@ -16,13 +16,15 @@ The original code can be found [here](https://github.com/gherardovarando/stagedt
 ### Modifications
 This package extends the original `stagedtrees` package with the following functions:
 
-* `stages_ordered_bhc()` - performs Backward Hill-Climbing search over ordinal 
+* `stages_ordered_bhc()` - performs a greedy search over ordinal 
 variables, restricting the merges to only "adjacent" categories.
 
 * `exhaustive_ordered_search()` -  performs a full search over an ordinal 
 variable and returns the model with best partition of the variable into n stages.
 
-* `join_multiple_stages()` - joins multiple stages corresponding to one variable
+* `join_multiple_stages()` - joins multiple stages from a vector of stages corresponding to one variable
 
-* `stages_bhc_plot()`- simultaniously runs the backwatd Hill-Climbing algorithm 
+* `partition_stages()` - joins multiple stages corresponding to one variable accorrding to the specified partition
+
+* `stages_bhc_plot()`- simultaniously runs the Bacward Hill-Climbing algorithm 
 and plots the stagedtree together with the probability barplot for every single merge of two stages.

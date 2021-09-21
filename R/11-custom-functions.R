@@ -336,6 +336,9 @@ partition_stages <- function(object, v, part) {
 #'          the object was fitted.
 #' @export
 join_multiple_stages <- function(object, v, join_stages) {
+  if (length(join_stages) < 2) {  # no stages to be merged
+    return(object)
+  }
   check_sevt(object)
   join_stages <- as.character(join_stages)
   s1 <- join_stages[1]

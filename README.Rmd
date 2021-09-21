@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 ### Overview 
 
-This repository contains a modification of the original `stagedtrees` package 
+This repository contains modifications of the original `stagedtrees` package 
 that implements staged event trees, a probability model for categorical random variables. 
 The original code can be found [here](https://github.com/gherardovarando/stagedtrees).
 

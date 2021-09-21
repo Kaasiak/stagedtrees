@@ -9,7 +9,7 @@
 
 ### Overview 
 
-This repository contains a modification of the original `stagedtrees` package 
+This repository contains modifications of the original `stagedtrees` package 
 that implements staged event trees, a probability model for categorical random variables. 
 The original code can be found [here](https://github.com/gherardovarando/stagedtrees).
 
@@ -26,5 +26,5 @@ variable and returns the model with best partition of the variable into n stages
 
 * `partition_stages()` - joins multiple stages corresponding to one variable accorrding to the specified partition
 
-* `stages_bhc_plot()`- simultaniously runs the Bacward Hill-Climbing algorithm 
+* `stages_bhc_plot()`- simultaneously runs the Bacward Hill-Climbing algorithm 
 and plots the stagedtree together with the probability barplot for every single merge of two stages.

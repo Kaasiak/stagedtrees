@@ -7,7 +7,9 @@
 exhaustive_ordered_search(
   object,
   n_bins = 3,
+  n_init = NULL,
   variable = NULL,
+  per_subset = FALSE,
   ignore = object$name_unobserved,
   score = function(x) {     return(logLik(x)) }
 )
@@ -18,7 +20,11 @@ data, as returned by \code{full} or \code{sevt_fit}.}
 
 \item{n_bins}{final number of stages.}
 
+\item{n_init}{initial number of stages per subset considered for the optimization.}
+
 \item{variable}{name of a variables that should be considered for the optimization.}
+
+\item{per_subset}{if TRUE performs the merging of the stages in each subtree separately,}
 
 \item{ignore}{vector of stages which will be ignored and left untouched,
 by default the name of the unobserved stages stored in

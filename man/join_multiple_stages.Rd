@@ -4,12 +4,12 @@
 \alias{join_multiple_stages}
 \title{Join multiple stages}
 \usage{
-join_multiple_stages(object, v, join_stages)
+join_multiple_stages(object, variable, join_stages)
 }
 \arguments{
 \item{object}{an object of class \code{sevt}.}
 
-\item{v}{variable.}
+\item{variable}{name of a variables that should be considered for the optimization}
 
 \item{join_stages}{vector of stages to be merged.}
 }

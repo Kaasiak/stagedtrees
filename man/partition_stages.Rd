@@ -4,12 +4,14 @@
 \alias{partition_stages}
 \title{Join multiple stages}
 \usage{
-partition_stages(object, v, part)
+partition_stages(object, variable, stages, part)
 }
 \arguments{
 \item{object}{an object of class \code{sevt}.}
 
-\item{v}{variable.}
+\item{variable}{variable.}
+
+\item{stages}{vector of stages considered for joining.}
 
 \item{part}{vector of partitioning the stages into n bins.}
 }

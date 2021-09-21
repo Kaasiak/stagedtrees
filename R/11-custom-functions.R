@@ -129,7 +129,7 @@ stages_ordered_bhc <-
 #' @return The final staged event tree obtained.
 #' @importFrom stats  BIC
 #' @export
-exhaustive_ordered_search <- function(
+full_ordered_search <- function(
                               object,
                               n_bins = 3,
                               n_init = NULL,

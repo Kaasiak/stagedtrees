@@ -19,7 +19,7 @@ This package extends the original `stagedtrees` package with the following funct
 * `stages_ordered_bhc()` - performs a greedy search over ordinal 
 variables, restricting the merges to only "adjacent" categories.
 
-* `full_ordered_search()` -  performs a full search over an ordinal 
+* `stages_full_ordered_search()` -  performs a full search over an ordinal 
 variable and returns the model with best partition of the variable into n stages.
 
 * `join_multiple_stages()` - joins multiple stages from a vector of stages corresponding to one variable

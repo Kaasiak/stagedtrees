@@ -2,7 +2,7 @@
 % Please edit documentation in R/11-custom-functions.R
 \name{partition_stages}
 \alias{partition_stages}
-\title{Join multiple stages}
+\title{Join stages of a staged event tree according to a partition}
 \usage{
 partition_stages(object, variable, stages, part)
 }

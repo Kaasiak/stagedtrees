@@ -2,18 +2,15 @@
 % Please edit documentation in R/11-custom-functions.R
 \name{stages_ordered_bhc}
 \alias{stages_ordered_bhc}
-\title{TO DO: Add examples
-Backward hill-climbing for ordered variables}
+\title{Backward hill-climbing for ordered variables}
 \usage{
 stages_ordered_bhc(
   object,
   variable = NULL,
   n_init = NULL,
-  per_subset = FALSE,
   score = function(x) {     return(-BIC(x)) },
   max_iter = Inf,
-  ignore = object$name_unobserved,
-  trace = 0
+  ignore = object$name_unobserved
 )
 }
 \arguments{
@@ -22,9 +19,7 @@ data, as returned by \code{full} or \code{sevt_fit}.}
 
 \item{variable}{name of a variables that should be considered for the optimization.}
 
-\item{n_init}{initial number of stages per subset considered for the optimization.}
-
-\item{per_subset}{if TRUE performs the merging of the stages in each subtree separately,
+\item{n_init}{initial number of stages per subset considered for the optimization.
 if FALSE in first step merges all stages associated with the same outcome into the same stage.}
 
 \item{score}{the score function to be maximized.}
@@ -34,9 +29,6 @@ if FALSE in first step merges all stages associated with the same outcome into t
 \item{ignore}{vector of stages which will be ignored and left untouched,
 by default the name of the unobserved stages stored in
 \code{object$name_unobserved}.}
-
-\item{trace}{if >0 increasingly amount of info
-is printed (via \code{message}).}
 }
 \value{
 The final staged event tree obtained.

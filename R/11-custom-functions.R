@@ -1,112 +1,5 @@
 #' TO DO: Add examples
-
-#' Backward hill-climbing for ordered variables
 #'
-#' Greedy search on one level of a staged event tree with
-#' iterative joining of "adjacent" stages for an ordererd variable.
-#' 
-#' @param object an object of class \code{sevt} with fitted probabilities and 
-#' data, as returned by \code{full} or \code{sevt_fit}.
-#' @param variable name of a variables that should be considered for the optimization.
-#' @param n_init initial number of stages per subset considered for the optimization.
-#' @param per_subset if TRUE performs the merging of the stages in each subtree separately,
-#' if FALSE in first step merges all stages associated with the same outcome into the same stage.
-#' @param score the score function to be maximized.
-#' @param max_iter the maximum number of iterations per variable.
-#' @param ignore vector of stages which will be ignored and left untouched,
-#'               by default the name of the unobserved stages stored in
-#'               `object$name_unobserved`.
-#' @param trace if >0 increasingly amount of info
-#' is printed (via \code{message}).
-#' @details For the given variable the algorithm tries to join "adjacent" stages
-#' and moves to the best model that increases the score. When no
-#' increase is possible it terminates and returns the best scoring model.
-#' @return The final staged event tree obtained.
-#' @importFrom stats  BIC
-#' @export
-stages_ordered_bhc <-
-  function(object,
-           variable = NULL,
-           n_init = NULL,
-           per_subset = FALSE,
-           score = function(x) {
-             return(-BIC(x))
-           },
-           max_iter = Inf,
-           ignore = object$name_unobserved,
-           trace = 0) {
-    check_sevt_fit(object)
-    if (is.null(n_init)) {
-      stop("Initial number of stages per subset must be specified")
-    }
-    now_score <- score(object)
-    if (is.null(variable)) {
-      stop("The variable to be optimised must be specified")
-    }
-    v <- variable
-    
-    # initial merge of stages associated with the same outcomes
-    if (!per_subset) {
-      for (i in seq(1, n_init)) {
-        join_stages <- seq(i, length(object$stages[[v]]), n_init)
-        object <- join_multiple_stages(object, v, join_stages)
-      }
-    }
-    
-    stages <- unique(object$stages[[v]])
-    stages <- stages[!(stages %in% ignore)]
-    subset_stages_index <- seq(1,length(stages), n_init)  #starting indices for subsets of stages
-    n_subsets <- length(subset_stages_index)
-    start_stage <- 1
-    for (k in seq(1, n_subsets)) {
-      iter <- 0
-      done <- FALSE
-      n_stages <- n_init
-      while (!done && iter < max_iter) {
-        iter <- iter + 1
-        temp <- object # clone the object
-        temp_score <- now_score
-        done <- TRUE
-        stages <- unique(object$stages[[v]])[seq(start_stage, start_stage + n_stages - 1)]
-        stages <- stages[!(stages %in% ignore)]
-        if (length(stages) > 1) {
-          for (i in 2:length(stages)) {
-            ## scan the neighbouring stages
-            s1 <- stages[i - 1]
-            s2 <- stages[i]
-            try <- join_stages(object, v, s1, s2) ## join the 2 stages
-            try_score <- score(try)
-            if (try_score >= temp_score) {
-              temp <- try
-              temp_score <- try_score
-              s1a <- s1
-              s2a <- s2
-              done <- FALSE
-            }
-          }
-        } ## end if there are more than 1 stage
-        if (!done) {
-          n_stages <- n_stages - 1
-        }
-        object <- temp
-        now_score <- temp_score
-        if ((trace > 1) && !done) {
-          message(v, " joined stages: ", s1a, " and ", s2a)
-        }
-      } ## end while
-      start_stage <- start_stage + n_stages
-    }
-    
-    if (trace > 0) {
-      message("BHC over ", v, " done after ", iter, " iterations")
-    }
-    if (trace > 0) {
-      message("BHC done")
-    }
-    object$call <- sys.call()
-    object$score <- list(value = now_score, f = score)
-    return(object)
-  }
 
 #' Full search of an ordered variable.
 #'
@@ -118,7 +11,6 @@ stages_ordered_bhc <-
 #' @param variable name of a variables that should be considered for the optimization.
 #' @param n_bins final number of stages.
 #' @param n_init initial number of stages per subset considered for the optimization.
-#' @param per_subset if TRUE performs the merging of the stages in each subtree separately,
 #' @param score the score function to be maximized.
 #' @param ignore vector of stages which will be ignored and left untouched,
 #'               by default the name of the unobserved stages stored in
@@ -129,58 +21,127 @@ stages_ordered_bhc <-
 #' @return The final staged event tree obtained.
 #' @importFrom stats  BIC
 #' @export
-full_ordered_search <- function(
-                              object,
-                              n_bins = 3,
-                              n_init = NULL,
-                              variable = NULL,
-                              per_subset = FALSE, 
-                              ignore = object$name_unobserved,
-                              score = function(x) {return(logLik(x))}) {
-  v <- variable
-  
-  if (is.null(v)) {
-    stop("Variable to be optimised must be specified")
-  }
-  if (is.null(n_init)) {
-    stop("Initial number of stages must be specified")
-  }
-  # initial merge of stages associated with the same outcomes
-  if (!per_subset) {
-    for (i in seq(1, n_init)) {
-      join_stages <- seq(i, length(object$stages[[v]]), n_init)
-      object <- join_multiple_stages(object, v, join_stages)
+stages_full_ordered_search <-
+  function(object,
+           variable = NULL,
+           n_init = NULL,
+           n_bins = 3,
+           score = function(x) {
+             return(-BIC(x))
+           },
+           ignore = object$name_unobserved) {
+    check_sevt_fit(object)
+    v <- variable
+    if (is.null(n_init)) {
+      stop("Initial number of stages per subset must be specified")
     }
-  }
-  stages <- unique(object$stages[[v]])
-  subset_stages_index <- seq(1,length(stages), n_init)  #starting indices for subsets of stages
-  n_subsets <- length(subset_stages_index)
-  start_stage <- 1
-  for (k in seq(1, n_subsets)) {
-    subset_stages <- stages[seq(start_stage, start_stage + n_init - 1)]
+    if (is.null(variable)) {
+      stop("The variable to be optimised must be specified")
+    }
+    if (length(object$stages[[v]]) %% n_init != 0) {
+      stop("Starting number of stages must be a multiple of n_init")
+    }
+    n_subtrees <- length(object$stages[[v]]) / n_init
     partitions <- as.matrix(gtools::combinations(n = n_init - 1, r = n_bins - 1, repeats.allowed = FALSE))
     maxScore <- -Inf
     best_part <- NULL
     best_object <- NULL
-    for (i in seq(1, nrow(partitions))) {
+    for (i in seq(1, nrow(partitions))) {  # try every partition
+      try_object <- object
       part <- partitions[i,]
       part <- c(0, part, n_init)
-      try_object <- partition_stages(object, v, subset_stages, part)
-      try_score <- score(try_object)
+      for (k in seq(1, n_subtrees)) {  # merge stages of every subtree
+        stages <- as.character(seq((k - 1) * n_init + 1, k * n_init))
+        try_object <- partition_stages(try_object, v, stages, part)
+        try_score <- score(try_object)
+      }
       if (try_score > maxScore) {
-          maxScore <- try_score
-          best_part <- part
-          best_object <- try_object
+        maxScore <- try_score
+        best_part <- part
+        best_object <- try_object
       }
     }
-    start_stage <- start_stage + n_init
-    object <- best_object
     print(best_part)
-  }
-  return(best_object)
+    return(best_object)
 }
 
-#' Join multiple stages
+#' Backward hill-climbing for ordered variables
+#'
+#' Greedy search on one level of a staged event tree with
+#' iterative joining of "adjacent" stages for an ordererd variable.
+#' 
+#' @param object an object of class \code{sevt} with fitted probabilities and 
+#' data, as returned by \code{full} or \code{sevt_fit}.
+#' @param variable name of a variables that should be considered for the optimization.
+#' @param n_init initial number of stages per subset considered for the optimization.
+#' if FALSE in first step merges all stages associated with the same outcome into the same stage.
+#' @param score the score function to be maximized.
+#' @param max_iter the maximum number of iterations per variable.
+#' @param ignore vector of stages which will be ignored and left untouched,
+#'               by default the name of the unobserved stages stored in
+#'               `object$name_unobserved`.
+#' @details For the given variable the algorithm tries to join "adjacent" stages
+#' and moves to the best model that increases the score. When no
+#' increase is possible it terminates and returns the best scoring model.
+#' @return The final staged event tree obtained.
+#' @importFrom stats  BIC
+#' @export
+stages_ordered_bhc <-
+  function(object,
+           variable = NULL,
+           n_init = NULL,
+           score = function(x) {
+             return(-BIC(x))
+           },
+           max_iter = Inf,
+           ignore = object$name_unobserved) {
+    check_sevt_fit(object)
+    v <- variable
+    if (is.null(n_init)) {
+      stop("Initial number of stages per subset must be specified")
+    }
+    if (is.null(variable)) {
+      stop("The variable to be optimised must be specified")
+    }
+    if (length(object$stages[[v]]) %% n_init != 0) {
+      stop("Starting number of stages must be a multiple of n_init")
+    }
+    best_score <- score(object)
+    n_subtrees <- length(object$stages[[v]]) / n_init
+    done <- FALSE
+    iter <- 0
+    temp <- object # clone the object
+    while (!done && iter < max_iter) {
+      done <- TRUE
+      iter <- iter + 1
+      stages <- unique(temp$stages[[v]][1:n_init])
+      n_stages <- length(stages)
+      if (length(stages) > 1) {
+        for (i in 2:length(stages)) {
+          # scan the neighbouring stages
+          s1 <- as.numeric(stages[i - 1])
+          s2 <- as.numeric(stages[i])
+          try_object <- temp
+          for (k in seq(1, n_subtrees))  { # join the 2 stages in every subtree
+            s1 <- s1 + n_init * (k - 1)
+            s2 <- s2 + n_init * (k - 1)
+            try_object <- join_stages(try_object, v, as.character(s1), as.character(s2))
+          }
+          try_score <- score(try_object)
+          if (try_score >= best_score) {
+            best_object <- try_object
+            best_score <- score(best_object)
+            done <- FALSE
+          }
+        }
+      } ## end if there are more than 1 stage
+      temp <- best_object
+      best_score <- score(best_object)
+    } ## end while
+    return(best_object)
+}
+
+#' Join stages of a staged event tree according to a partition
 #'
 #' Join multiple stages in a staged event tree object, updating
 #' probabilities and log-likelihood accordingly.
@@ -357,3 +318,184 @@ stages_bhc_plot <-
     par(mfrow = c(1,1))
     return(object)
   }
+
+
+#' #' Backward hill-climbing for ordered variables
+#' #'
+#' #' Greedy search on one level of a staged event tree with
+#' #' iterative joining of "adjacent" stages for an ordererd variable.
+#' #'
+#' #' @param object an object of class \code{sevt} with fitted probabilities and
+#' #' data, as returned by \code{full} or \code{sevt_fit}.
+#' #' @param variable name of a variables that should be considered for the optimization.
+#' #' @param n_init initial number of stages per subset considered for the optimization.
+#' #' @param per_subset if TRUE performs the merging of the stages in each subtree separately,
+#' #' if FALSE in first step merges all stages associated with the same outcome into the same stage.
+#' #' @param score the score function to be maximized.
+#' #' @param max_iter the maximum number of iterations per variable.
+#' #' @param ignore vector of stages which will be ignored and left untouched,
+#' #'               by default the name of the unobserved stages stored in
+#' #'               `object$name_unobserved`.
+#' #' @param trace if >0 increasingly amount of info
+#' #' is printed (via \code{message}).
+#' #' @details For the given variable the algorithm tries to join "adjacent" stages
+#' #' and moves to the best model that increases the score. When no
+#' #' increase is possible it terminates and returns the best scoring model.
+#' #' @return The final staged event tree obtained.
+#' #' @importFrom stats  BIC
+#' #' @export
+#' stages_ordered_bhc <-
+#'   function(object,
+#'            variable = NULL,
+#'            n_init = NULL,
+#'            per_subset = FALSE,
+#'            score = function(x) {
+#'              return(-BIC(x))
+#'            },
+#'            max_iter = Inf,
+#'            ignore = object$name_unobserved,
+#'            trace = 0) {
+#'     check_sevt_fit(object)
+#'     if (is.null(n_init)) {
+#'       stop("Initial number of stages per subset must be specified")
+#'     }
+#'     now_score <- score(object)
+#'     if (is.null(variable)) {
+#'       stop("The variable to be optimised must be specified")
+#'     }
+#'     v <- variable
+#' 
+#'     # initial merge of stages associated with the same outcomes
+#'     if (!per_subset) {
+#'       for (i in seq(1, n_init)) {
+#'         join_stages <- seq(i, length(object$stages[[v]]), n_init)
+#'         object <- join_multiple_stages(object, v, join_stages)
+#'       }
+#'     }
+#' 
+#'     stages <- unique(object$stages[[v]])
+#'     stages <- stages[!(stages %in% ignore)]
+#'     subset_stages_index <- seq(1,length(stages), n_init)  #starting indices for subsets of stages
+#'     n_subsets <- length(subset_stages_index)
+#'     start_stage <- 1
+#'     for (k in seq(1, n_subsets)) {
+#'       iter <- 0
+#'       done <- FALSE
+#'       n_stages <- n_init
+#'       while (!done && iter < max_iter) {
+#'         iter <- iter + 1
+#'         temp <- object # clone the object
+#'         temp_score <- now_score
+#'         done <- TRUE
+#'         stages <- unique(object$stages[[v]])[seq(start_stage, start_stage + n_stages - 1)]
+#'         stages <- stages[!(stages %in% ignore)]
+#'         if (length(stages) > 1) {
+#'           for (i in 2:length(stages)) {
+#'             ## scan the neighbouring stages
+#'             s1 <- stages[i - 1]
+#'             s2 <- stages[i]
+#'             try <- join_stages(object, v, s1, s2) ## join the 2 stages
+#'             try_score <- score(try)
+#'             if (try_score >= temp_score) {
+#'               temp <- try
+#'               temp_score <- try_score
+#'               s1a <- s1
+#'               s2a <- s2
+#'               done <- FALSE
+#'             }
+#'           }
+#'         } ## end if there are more than 1 stage
+#'         if (!done) {
+#'           n_stages <- n_stages - 1
+#'         }
+#'         object <- temp
+#'         now_score <- temp_score
+#'         if ((trace > 1) && !done) {
+#'           message(v, " joined stages: ", s1a, " and ", s2a)
+#'         }
+#'       } ## end while
+#'       start_stage <- start_stage + n_stages
+#'     }
+#' 
+#'     if (trace > 0) {
+#'       message("BHC over ", v, " done after ", iter, " iterations")
+#'     }
+#'     if (trace > 0) {
+#'       message("BHC done")
+#'     }
+#'     object$call <- sys.call()
+#'     object$score <- list(value = now_score, f = score)
+#'     return(object)
+#' }
+
+#' #' Full search of an ordered variable.
+#' #'
+#' #' Full search on one level of a staged event tree with
+#' #' iterative joining of "adjacent" stage for an ordered variable.
+#' #' 
+#' #' @param object an object of class \code{sevt} with fitted probabilities and 
+#' #' data, as returned by \code{full} or \code{sevt_fit}.
+#' #' @param variable name of a variables that should be considered for the optimization.
+#' #' @param n_bins final number of stages.
+#' #' @param n_init initial number of stages per subset considered for the optimization.
+#' #' @param per_subset if TRUE performs the merging of the stages in each subtree separately,
+#' #' @param score the score function to be maximized.
+#' #' @param ignore vector of stages which will be ignored and left untouched,
+#' #'               by default the name of the unobserved stages stored in
+#' #'               `object$name_unobserved`.
+#' #' @details For the given variable the algorithm separates the stages into bins 
+#' #' and joins all stages in one bin. It searches all possible splittings of the 
+#' #' stages into the bins and returns the best scoring model.
+#' #' @return The final staged event tree obtained.
+#' #' @importFrom stats  BIC
+#' #' @export
+#' full_ordered_search <- function(
+#'                               object,
+#'                               n_bins = 3,
+#'                               n_init = NULL,
+#'                               variable = NULL,
+#'                               per_subset = FALSE, 
+#'                               ignore = object$name_unobserved,
+#'                               score = function(x) {return(logLik(x))}) {
+#'   v <- variable
+#'   
+#'   if (is.null(v)) {
+#'     stop("Variable to be optimised must be specified")
+#'   }
+#'   if (is.null(n_init)) {
+#'     stop("Initial number of stages must be specified")
+#'   }
+#'   # initial merge of stages associated with the same outcomes
+#'   if (!per_subset) {
+#'     for (i in seq(1, n_init)) {
+#'       join_stages <- seq(i, length(object$stages[[v]]), n_init)
+#'       object <- join_multiple_stages(object, v, join_stages)
+#'     }
+#'   }
+#'   stages <- unique(object$stages[[v]])
+#'   subset_stages_index <- seq(1,length(stages), n_init)  #starting indices for subsets of stages
+#'   n_subsets <- length(subset_stages_index)
+#'   start_stage <- 1
+#'   for (k in seq(1, n_subsets)) {
+#'     subset_stages <- stages[seq(start_stage, start_stage + n_init - 1)]
+#'     partitions <- as.matrix(gtools::combinations(n = n_init - 1, r = n_bins - 1, repeats.allowed = FALSE))
+#'     maxScore <- -Inf
+#'     best_part <- NULL
+#'     best_object <- NULL
+#'     for (i in seq(1, nrow(partitions))) {
+#'       part <- partitions[i,]
+#'       part <- c(0, part, n_init)
+#'       try_object <- partition_stages(object, v, subset_stages, part)
+#'       try_score <- score(try_object)
+#'       if (try_score > maxScore) {
+#'           maxScore <- try_score
+#'           best_part <- part
+#'           best_object <- try_object
+#'       }
+#'     }
+#'     start_stage <- start_stage + n_init
+#'     object <- best_object
+#'     print(best_part)
+#'   }
+#'   return(best_object)
+#' }

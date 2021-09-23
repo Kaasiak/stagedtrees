@@ -123,9 +123,9 @@ stages_ordered_bhc <-
           s2 <- as.numeric(stages[i])
           try_object <- temp
           for (k in seq(1, n_subtrees))  { # join the 2 stages in every subtree
-            s1 <- s1 + n_init * (k - 1)
-            s2 <- s2 + n_init * (k - 1)
-            try_object <- join_stages(try_object, v, as.character(s1), as.character(s2))
+            s1a <- s1 + n_init * (k - 1)
+            s2a <- s2 + n_init * (k - 1)
+            try_object <- join_stages(try_object, v, as.character(s1a), as.character(s2a))
           }
           try_score <- score(try_object)
           if (try_score >= best_score) {
